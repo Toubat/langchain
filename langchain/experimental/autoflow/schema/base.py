@@ -25,7 +25,7 @@ class SchemaParseError(Exception):
 
 def format_primitive_error_message(type_name: str, input: Any) -> str:
     """Format an error message for a primitive type."""
-    return f"Expected {type_name}, got {type(input)} for {input}"
+    return f"Expected {type_name}, got {type(input).__name__} for {input}"
 
 
 class BaseSchema(BaseModel, ABC):
@@ -74,9 +74,7 @@ class StringSchema(PrimitiveSchema):
 
     def parse(self, input: Any) -> str:
         """Parse input to this schema."""
-        if not isinstance(input, str):
-            raise SchemaParseError(format_primitive_error_message(self.type_name, input))
-        return input
+        return str(input)
 
 
 class BooleanSchema(PrimitiveSchema):
@@ -90,7 +88,8 @@ class BooleanSchema(PrimitiveSchema):
     def parse(self, input: Any) -> bool:
         """Parse input to this schema."""
         if not isinstance(input, bool):
-            raise SchemaParseError(format_primitive_error_message(self.type_name, input))
+            raise SchemaParseError(
+                format_primitive_error_message(self.type_name, input))
         return input
 
 
@@ -105,7 +104,8 @@ class NumberSchema(PrimitiveSchema):
     def parse(self, input: Any) -> Union[int, float]:
         """Parse input to this schema."""
         if not isinstance(input, (int, float)):
-            raise SchemaParseError(format_primitive_error_message(self.type_name, input))
+            raise SchemaParseError(
+                format_primitive_error_message(self.type_name, input))
         return input
 
 
@@ -130,7 +130,8 @@ class ArraySchema(BaseSchema):
     def parse(self, input: Any) -> List[Any]:
         """Parse input to this schema."""
         if not isinstance(input, list):
-            raise SchemaParseError(format_primitive_error_message(self.type_name, input))
+            raise SchemaParseError(
+                format_primitive_error_message(self.type_name, input))
         return [self.element_instance.parse(item) for item in input]
 
 
@@ -143,24 +144,28 @@ class ObjectSchema(BaseSchema):
     def type_name(self) -> str:
         """Return the type name of object schema."""
         attr_str = "\n".join(
-            [f"  \"{key}\": {field.type_name}, ({field.description})" if field.description else f"  \"{key}\": {field.type_name}," for key, field in self.fields.items()]
+            [f"  \"{key}\": {field.type_name}, ({field.description})" if field.description else f"  \"{key}\": {field.type_name}," for key,
+             field in self.fields.items()]
         )
         return "\n".join(["{", attr_str, "}"])
 
     def parse(self, input: Any) -> dict:
         """Parse input to this schema."""
         if not isinstance(input, dict):
-            raise SchemaParseError(format_primitive_error_message(self.type_name, input))
+            raise SchemaParseError(
+                format_primitive_error_message(self.type_name, input))
 
         # check if all required keys are present
         for key, field in self.fields.items():
             if key not in input:
-                raise SchemaParseError(f"Expected key \"{key}\" of type {field.type_name} in {input}")
+                raise SchemaParseError(
+                    f"Expected key \"{key}\" of type {field.type_name} in {input}")
 
         # check if extra keys are present
         for key in input.keys():
             if key not in self.fields:
-                raise SchemaParseError(f"Unexpected key \"{key}\" in {input}, the expected keys are {self.fields.keys()}")
+                raise SchemaParseError(
+                    f"Unexpected key \"{key}\" in {input}, the expected keys are {self.fields.keys()}")
 
         # parse each field
         return {key: field.parse(input[key]) for key, field in self.fields.items()}

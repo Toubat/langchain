@@ -39,6 +39,8 @@ Subtasks form a dependency flow graph that solve the main task, so that one subt
 You have access to a set of tools with their description:
 {% for tool in tools %}
 - {{ tool.name }}: {{ tool.description }}
+    - input_schema: {{ tool.args }}
+    - output_schema: { "result": string }
 {% endfor %}
 
 [TASK_DESCRIPTION]
@@ -55,14 +57,13 @@ Here is the output schema of the task:
 
 [PREVIOUS_ATTEMPTS]
 Here are the previous attempts of breaking down the task and the critiques of each attempt:
+{% if len(attempt_history) > 0 %}
 {% for attempt in attempt_history %}
 {{ attempt }}
 {% endfor %}
-
-Based on existing tools, task description, input context, and output schema, you should to the following steps:
-1. Think about whether the main task can be solved by existing tools.
-2. If main task is solvable, breakdown the main task into a list of subtasks in natural language.
-3. Evaluate the subtask list, reflect on how to improve the current subtask list if possible.
+{% else %}
+No previous attempts.
+{% endif %}
 
 {{ format_instructions }}
 """
